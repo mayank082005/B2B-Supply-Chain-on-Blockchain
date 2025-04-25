@@ -122,4 +122,71 @@ contract B2BSupplyChain {
     function getShipmentsByReceiver(address _receiver) external view returns (uint256[] memory) {
         return shipmentsByReceiver[_receiver];
     }
+
+    // ✅ New Function 1: Get shipment status as string
+    function getShipmentStatus(uint256 _shipmentId) external view returns (string memory) {
+        Shipment storage s = shipments[_shipmentId];
+        if (s.status == Status.Pending) return "Pending";
+        if (s.status == Status.InTransit) return "In Transit";
+        if (s.status == Status.Delivered) return "Delivered";
+        if (s.status == Status.Cancelled) return "Cancelled";
+        return "Unknown";
+    }
+
+    // ✅ New Function 2: Get all shipment IDs with a specific status
+    function getShipmentsByStatus(Status _status) external view returns (uint256[] memory) {
+        uint256 count = 0;
+        for (uint256 i = 1; i <= shipmentCount; i++) {
+            if (shipments[i].status == _status) {
+                count++;
+            }
+        }
+
+        uint256[] memory result = new uint256[](count);
+        uint256 index = 0;
+        for (uint256 i = 1; i <= shipmentCount; i++) {
+            if (shipments[i].status == _status) {
+                result[index++] = i;
+            }
+        }
+        return result;
+    }
+
+    // ✅ New Function 3: Get all shipment IDs involving a user (sender or receiver)
+    function getShipmentHistoryByUser(address _user) external view returns (uint256[] memory) {
+        uint256 senderCount = shipmentsBySender[_user].length;
+        uint256 receiverCount = shipmentsByReceiver[_user].length;
+        uint256[] memory result = new uint256[](senderCount + receiverCount);
+
+        for (uint256 i = 0; i < senderCount; i++) {
+            result[i] = shipmentsBySender[_user][i];
+        }
+
+        for (uint256 i = 0; i < receiverCount; i++) {
+            result[senderCount + i] = shipmentsByReceiver[_user][i];
+        }
+
+        return result;
+    }
+
+    // ✅ New Function 4: Check if a user is registered as supplier or buyer
+    function isRegisteredUser(address _user) external view returns (bool isSupplier, bool isBuyer) {
+        isSupplier = registeredSuppliers[_user];
+        isBuyer = registeredBuyers[_user];
+    }
+
+    // ✅ New Function 5: Admin-only delete (use with caution)
+    function deleteShipment(uint256 _shipmentId) external onlyOwner {
+        require(_shipmentId > 0 && _shipmentId <= shipmentCount, "Invalid shipment ID");
+        delete shipments[_shipmentId];
+    }
+
+    // ✅ New Function 6: Get all shipment IDs
+    function getAllShipments() external view returns (uint256[] memory) {
+        uint256[] memory all = new uint256[](shipmentCount);
+        for (uint256 i = 0; i < shipmentCount; i++) {
+            all[i] = i + 1;
+        }
+        return all;
+    }
 }
